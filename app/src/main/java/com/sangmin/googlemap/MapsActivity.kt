@@ -74,7 +74,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
-
     }
 
     /**
@@ -97,7 +96,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
 
 //        // Add a marker in Sydney and move the camera
-//        val seoul = LatLng(37.5663, 126.9779)
+        val seoul = LatLng(37.5663, 126.9779)
 //        // 마커 아이콘 만들기
 //        val descriptor = getDescriptorFromDrawable(R.drawable.marker)
 //
@@ -109,39 +108,40 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 //
 //        mMap.addMarker(marker)
 //        // 카메라의 위치
-//        val cameraOption = CameraPosition.Builder()
-//            .target(seoul)
-//            .zoom(17f)
-//            .build()
+        val cameraOption = CameraPosition.Builder()
+            .target(seoul)
+            .zoom(13f)
+            .build()
+
+        val camera = CameraUpdateFactory.newCameraPosition(cameraOption)
 //
-//        val camera = CameraUpdateFactory.newCameraPosition(cameraOption)
 //
-//
-//        mMap.moveCamera(camera)
+        mMap.moveCamera(camera)
+
+        loadHospital()
     }
 
-//    -- 내 위치를 가져오는 코드
+    //    -- 내 위치를 가져오는 코드
     lateinit var fusedLocationClient:FusedLocationProviderClient
     lateinit var locationCallback:LocationCallback
 
     @SuppressLint("MissingPermission")
     fun setUpdateLocationListner(){
         val locationRequest = LocationRequest.create()
+
         locationRequest.run {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
             interval = 1000
         }
 
-        locationCallback = object : LocationCallback (){
+        locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult?.let {
-                    for((i, location) in it.locations.withIndex()){
+                    for ((i, location) in it.locations.withIndex()) {
                         Log.d("로케이션", "$i ${location.latitude}, ${location.longitude}")
                         setLastLocation(location)
-                        loadHospital()
+                    }
                 }
-                }
-
             }
         }
 
@@ -156,18 +156,17 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val marker = MarkerOptions()
             .position(myLocation)
             .title("I am here!")
-        val cameraOption = CameraPosition.Builder()
-            .target(myLocation)
-            .zoom(15.0f)
-            .build()
-        val  camera = CameraUpdateFactory.newCameraPosition(cameraOption)
+//        val cameraOption = CameraPosition.Builder()
+//            .target(myLocation)
+//            .zoom(15.0f)
+//            .build()
+//        val  camera = CameraUpdateFactory.newCameraPosition(cameraOption)
 
 
-        mMap.clear()
+//        mMap.clear()
 
         mMap.addMarker(marker)
-        mMap.moveCamera(camera)
-
+//        mMap.moveCamera(camera)
     }
 
     override fun onRequestPermissionsResult(
@@ -177,27 +176,27 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when(requestCode){
-          PERM_FLAG -> {
-              var check = true
-              for (grant in grantResults) {
-                  if (grant != PERMISSION_GRANTED) {
-                      check = false
-                      break
-                  }
-              }
-              if (check){
-                  startProcess()
-              } else {
-                  Toast.makeText(this, "권한을 승인해야지만 앱을 사용할 수 있습니다", Toast.LENGTH_SHORT).show()
-                  finish()
-              }
-          }
+            PERM_FLAG -> {
+                var check = true
+                for (grant in grantResults) {
+                    if (grant != PERMISSION_GRANTED) {
+                        check = false
+                        break
+                    }
+                }
+                if (check){
+                    startProcess()
+                } else {
+                    Toast.makeText(this, "권한을 승인해야지만 앱을 사용할 수 있습니다", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            }
         }
     }
 
 
-//    Drawable Marker 사용시 필요한 함수수
-   fun getDescriptorFromDrawable(drawableId: Int): BitmapDescriptor {
+    //    Drawable Marker 사용시 필요한 함수수
+    fun getDescriptorFromDrawable(drawableId: Int): BitmapDescriptor {
         var bitmapDrawable: BitmapDrawable
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             bitmapDrawable = getDrawable(drawableId) as BitmapDrawable
@@ -212,7 +211,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
 
-//    레트로핏 사용할 준비
+    //    레트로핏 사용할 준비
     fun loadHospital() {
         val retrofit  = Retrofit.Builder()
             .baseUrl(HospitalOpenApi.DOMAIN)
@@ -226,7 +225,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 override fun onResponse(call: Call<Hospital>, response: Response<Hospital>) {
                     val result = response.body()
                     showHospital(result)
-
                 }
 
                 override fun onFailure(call: Call<Hospital>, t: Throwable) {
@@ -241,8 +239,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     }
 
-//    병원들의 위치를 보여주는 함수
+    //    병원들의 위치를 보여주는 함수
     fun showHospital(result:Hospital?) {
+        Log.d("hospital", result.toString())
         result?.let {
             val latlngBounds = LatLngBounds.Builder()
             for (Hospital in it.TvEmgcHospitalInfo.row) {
@@ -250,21 +249,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 val position = LatLng(Hospital.WGS84LAT.toDouble(), Hospital.WGS84LON.toDouble())
                 val marker = MarkerOptions().position(position).title(Hospital.DUTYNAME)
 
-
                 mMap.addMarker(marker)
 
                 latlngBounds.include(position)
-
             }
-
             val bounds = latlngBounds.build()
             val padding = 0
 
 
-            val camera = CameraUpdateFactory.newLatLngBounds(bounds, padding)
-            mMap.moveCamera(camera)
-
-
+//            val camera = CameraUpdateFactory.newLatLngBounds(bounds, padding)
+//            mMap.moveCamera(camera)
         }
 
     }
